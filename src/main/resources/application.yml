@@ -1,8 +1,17 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 1MB
+      max-request-size: 1MB # Adjust as needed to accommodate multiple files or additional data in the request
   data:
     mongodb:
       uri: ${ARTOGRAD_MONGO_DB_CONNECTTION}
       
 springdoc:
   packagesToScan: me.artograd.javamongoapi.model,me.artograd.javamongoapi.controllers
-      
+
+aws:
+  s3:
+    bucket-name: artograd-proposals
+  
+

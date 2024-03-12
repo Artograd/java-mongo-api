@@ -44,17 +44,35 @@
 	      <groupId>org.springdoc</groupId>
 	      <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
 	      <version>2.3.0</version>
-	   </dependency> 
+	   </dependency>
+	   
+	   <dependency>
+		    <groupId>software.amazon.awssdk</groupId>
+		    <artifactId>s3</artifactId>
+		    <version>2.25.6</version> <!-- Use the latest version -->
+		</dependency>
 
 	</dependencies>
 
 	<build>
+		<finalName>artograd-mongo-api</finalName>
 		<plugins>
 			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
+			    <groupId>org.apache.maven.plugins</groupId>
+			    <artifactId>maven-shade-plugin</artifactId>
+			    <executions>
+			        <execution>
+			            <goals>
+			                <goal>shade</goal>
+			            </goals>
+			            <configuration>
+			                <shadedArtifactAttached>true</shadedArtifactAttached>
+			        </configuration>
+			        </execution>
+			    </executions>
 			</plugin>
 		</plugins>
+		
 	</build>
 
 </project>

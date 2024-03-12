@@ -1,1 +1,3 @@
-spring.data.mongodb.uri: ${ARTOGRAD_MONGO_DB_CONNECTTION}
+spring.data.mongodb.uri=${ARTOGRAD_MONGO_DB_CONNECTTION}
+springdoc.packagesToScan=me.artograd.javamongoapi.model,me.artograd.javamongoapi.controllers
+springdoc.swagger-ui.path=/swagger-ui.html
