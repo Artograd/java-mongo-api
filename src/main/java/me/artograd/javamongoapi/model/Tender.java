@@ -36,8 +36,6 @@ public class Tender {
     private boolean showEmail;
 	@Schema(description = "links to files of the supported documents")
     private List<String> files;
-	@Schema(description = "link of the cover (main) image")
-    private String coverUrl;
 	@Schema(description = "status of the tender")
     private String status;
 	
@@ -124,12 +122,6 @@ public class Tender {
 	}
 	public void setFiles(List<String> files) {
 		this.files = files;
-	}
-	public String getCoverUrl() {
-		return coverUrl;
-	}
-	public void setCoverUrl(String coverUrl) {
-		this.coverUrl = coverUrl;
 	}
 	public String getStatus() {
 		return status;
