@@ -24,20 +24,16 @@ public class Tender {
     private List<String> category;
 	@Schema(description = "The location info of the tender")
     private Location location;
-	@Schema(description = "The user name of the official who created the tender")
-    private String ownerName;
-	@Schema(description = "The user id of the official who created the tender")
-    private String ownerId;
-	@Schema(description = "The name of the organization of the official who created the tender")
-    private String organization;
 	@Schema(description = "The user email of the official who created the tender")
     private String ownerEmail;
 	@Schema(description = "Wheather email should be sent in the object as response")
     private boolean showEmail;
 	@Schema(description = "links to files of the supported documents")
     private List<String> files;
-	@Schema(description = "status of the tender")
+	@Schema(description = "Status of the tender")
     private String status;
+	@Schema(description = "The owner of the tender. When setting value please don't save email.")
+	private User owner;
 	
 	public String getId() {
 		return id;
@@ -87,24 +83,6 @@ public class Tender {
 	public void setLocation(Location location) {
 		this.location = location;
 	}
-	public String getOwnerName() {
-		return ownerName;
-	}
-	public void setOwnerName(String ownerName) {
-		this.ownerName = ownerName;
-	}
-	public String getOwnerId() {
-		return ownerId;
-	}
-	public void setOwnerId(String ownerId) {
-		this.ownerId = ownerId;
-	}
-	public String getOrganization() {
-		return organization;
-	}
-	public void setOrganization(String organization) {
-		this.organization = organization;
-	}
 	public String getOwnerEmail() {
 		return ownerEmail;
 	}
@@ -128,5 +106,11 @@ public class Tender {
 	}
 	public void setStatus(String status) {
 		this.status = status;
+	}
+	public User getOwner() {
+		return owner;
+	}
+	public void setOwner(User owner) {
+		this.owner = owner;
 	}
 }
