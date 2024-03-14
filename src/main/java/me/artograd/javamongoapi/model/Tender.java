@@ -32,8 +32,12 @@ public class Tender {
     private List<String> files;
 	@Schema(description = "Status of the tender")
     private String status;
-	@Schema(description = "The owner of the tender. When setting value please don't save email.")
-	private User owner;
+	@Schema(description = "The user name of the official who created the tender")
+    private String ownerName;
+	@Schema(description = "The user id of the official who created the tender")
+    private String ownerId;
+	@Schema(description = "The name of the organization of the official who created the tender")
+    private String organization;
 	
 	public String getId() {
 		return id;
@@ -107,10 +111,22 @@ public class Tender {
 	public void setStatus(String status) {
 		this.status = status;
 	}
-	public User getOwner() {
-		return owner;
+	public String getOwnerName() {
+		return ownerName;
 	}
-	public void setOwner(User owner) {
-		this.owner = owner;
+	public void setOwnerName(String ownerName) {
+		this.ownerName = ownerName;
+	}
+	public String getOwnerId() {
+		return ownerId;
+	}
+	public void setOwnerId(String ownerId) {
+		this.ownerId = ownerId;
+	}
+	public String getOrganization() {
+		return organization;
+	}
+	public void setOrganization(String organization) {
+		this.organization = organization;
 	}
 }
