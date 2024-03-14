@@ -13,5 +13,7 @@ springdoc:
 aws:
   s3:
     bucket-name: artograd-proposals
+  cognito:
+    userPoolId: eu-central-1_xxiTHHeNp
   
 
