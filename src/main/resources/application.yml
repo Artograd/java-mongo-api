@@ -12,8 +12,9 @@ springdoc:
 
 aws:
   s3:
-    bucket-name: artograd-proposals
+    bucket-name: artograd-media
+  cloudfront:
+    distribution-domain: https://d197uxz9wzvazk.cloudfront.net  
   cognito:
     userPoolId: eu-central-1_xxiTHHeNp
-  
-
+ 

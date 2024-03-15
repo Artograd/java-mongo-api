@@ -1,33 +1,91 @@
 package me.artograd.javamongoapi.controllers;
 
+import java.util.UUID;
+
+import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
-import software.amazon.awssdk.services.s3.presigner.S3Presigner;
-import software.amazon.awssdk.services.s3.presigner.model.PresignedPutObjectRequest;
+import org.springframework.web.multipart.MultipartFile;
 
-import java.net.URL;
-import java.time.Duration;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 @RestController
 public class S3FileUploadController {
 	
 	@Value("${aws.s3.bucket-name}")
     private String bucketName;
+	
+	@Value("${aws.cloudfront.distribution-domain}")
+    private String cloudFrontDomainName;
+	
+	private final S3Client s3Client = S3Client.builder()
+            .credentialsProvider(DefaultCredentialsProvider.create())
+            .build();
+	
+    @PostMapping("/uploadFile/{tenderFolder}/{subFolder}")
+    //@CrossOrigin(origins = "http://localhost:3000", methods = {RequestMethod.POST, RequestMethod.OPTIONS}, allowedHeaders = "*", allowCredentials = "true")
+    public ResponseEntity<?> uploadFile(
+    		@PathVariable String tenderFolder, 
+    		@PathVariable String subFolder, 
+    		@RequestParam("file") MultipartFile file) {
+        if (file.isEmpty()) {
+            return ResponseEntity.badRequest().body("File is empty");
+        }
 
-    @GetMapping("/generate-presigned-url")
-    public ResponseEntity<URL> generatePreSignedURL(@RequestParam String tenderId, @RequestParam String proposalId, @RequestParam String fileName) {
-        String key = String.format("%s/%s/%s", tenderId, proposalId, fileName);
-        S3Presigner presigner = S3Presigner.builder()
-                .credentialsProvider(DefaultCredentialsProvider.create())
-                .build();
+        String originalFilename = file.getOriginalFilename();
+        String extension = FilenameUtils.getExtension(originalFilename).toLowerCase();
+        String uniqueFileName = tenderFolder + "/" + subFolder + "/" + UUID.randomUUID().toString() + "." + extension;
+        String fileType = determineFileType(extension);
 
-        PresignedPutObjectRequest presignedRequest = presigner.presignPutObject(r -> r.signatureDuration(Duration.ofMinutes(10))
-                .putObjectRequest(por -> por.bucket(bucketName).key(key))); 
+        try {
+            s3Client.putObject(PutObjectRequest.builder()
+                    .bucket(bucketName)
+                    .key(uniqueFileName)
+                    .build(),
+                    RequestBody.fromBytes(file.getBytes()));
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().body("Failed to upload file to S3: " + e.getMessage());
+        }
 
-        return ResponseEntity.ok(presignedRequest.url());
+        // Construct the CloudFront URL for the file
+        String fileUrl = cloudFrontDomainName + "/" + uniqueFileName;
+
+        FileInfo fileInfo = new FileInfo(fileUrl, originalFilename, file.getSize(), 0, fileType, extension);
+        return ResponseEntity.ok(fileInfo);
+    }
+
+    private String determineFileType(String extension) {
+        if ("pdf".equals(extension)) {
+            return "iframe";
+        } else if (extension.matches("svg|png|jpg|heic|avif")) {
+            return "image";
+        }
+        return "attachment";
+    }
+
+    // Inner class to encapsulate file info response
+    static class FileInfo {
+        public String path;
+        public String name;
+        public long size;
+        public int id;
+        public String type;
+        public String extension;
+
+        public FileInfo(String path, String name, long size, int id, String type, String extension) {
+            this.path = path;
+            this.name = name;
+            this.size = size;
+            this.id = id;
+            this.type = type;
+            this.extension = extension;
+        }
     }
 }
