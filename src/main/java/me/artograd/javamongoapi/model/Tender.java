@@ -38,6 +38,12 @@ public class Tender {
     private String ownerId;
 	@Schema(description = "The name of the organization of the official who created the tender")
     private String organization;
+	@Schema(description = "the link to owner's picture")
+    private String ownerPicture;
+	@Schema(description = "Tender creation date")
+    private Date createdAt;
+	@Schema(description = "Tender last modification date")
+    private Date modifiedAt;
 	
 	public String getId() {
 		return id;
@@ -128,5 +134,23 @@ public class Tender {
 	}
 	public void setOrganization(String organization) {
 		this.organization = organization;
+	}
+	public Date getCreatedAt() {
+		return createdAt;
+	}
+	public void setCreatedAt(Date createdAt) {
+		this.createdAt = createdAt;
+	}
+	public Date getModifiedAt() {
+		return modifiedAt;
+	}
+	public void setModifiedAt(Date modifiedAt) {
+		this.modifiedAt = modifiedAt;
+	}
+	public String getOwnerPicture() {
+		return ownerPicture;
+	}
+	public void setOwnerPicture(String ownerPicture) {
+		this.ownerPicture = ownerPicture;
 	}
 }

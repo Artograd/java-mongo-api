@@ -1,12 +1,16 @@
 package me.artograd.javamongoapi.services;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import me.artograd.javamongoapi.model.Tender;
+import me.artograd.javamongoapi.model.User;
+import me.artograd.javamongoapi.model.UserAttribute;
 import me.artograd.javamongoapi.repositories.TenderRepository;
 
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -20,9 +24,15 @@ public class TenderService {
     private TenderRepository tenderRepository;
 	
 	@Autowired
+    private CognitoService cognitoService;
+	
+	@Autowired
 	private MongoTemplate mongoTemplate;
 	
 	public Tender createTender(Tender tender) {
+		tender.setModifiedAt( new Date() );
+		tender.setCreatedAt( tender.getModifiedAt() );
+		tender = setOwnerData(tender);
         return tenderRepository.save(tender);
     }
 
@@ -31,6 +41,8 @@ public class TenderService {
     }
 
     public Tender updateTender(Tender tender) {
+    	tender.setModifiedAt( new Date() );
+    	tender = setOwnerData(tender);
     	return tenderRepository.save(tender);
     }
 
@@ -63,5 +75,36 @@ public class TenderService {
         }
 
         return mongoTemplate.find(query, Tender.class);
+    }
+    
+    private Tender setOwnerData(Tender tender) {
+    	String sub = tender.getOwnerId();
+    	if (StringUtils.isNotBlank(sub)) {
+    		User user = cognitoService.getUserBySub(sub);
+    		if (user != null ) {
+    			List<UserAttribute> attributes = user.getAttributes();
+    			if ( attributes != null ) {
+    				String name = "";
+    				for (UserAttribute userAttribute : attributes) {
+        				if ( userAttribute.getName().equals("picture") ) {
+        					tender.setOwnerPicture( userAttribute.getValue() );
+        				}
+        				if ( userAttribute.getName().equals("given_name") ) {
+        					name = userAttribute.getValue() + name;
+        				}
+        				if ( userAttribute.getName().equals("family_name") ) {
+        					name = name + " " + userAttribute.getValue();
+        				}
+        				if ( userAttribute.getName().equals("custom:organization") ) {
+        					tender.setOrganization( userAttribute.getValue() );
+        				}
+        			}
+    				
+    				tender.setOwnerName( name.trim() );
+    			}
+    		}
+    		
+    	}
+    	return tender;
     }
 }
