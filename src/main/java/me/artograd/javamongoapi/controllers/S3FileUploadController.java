@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,13 +31,12 @@ public class S3FileUploadController {
             .build();
 	
     @PostMapping("/uploadFile/{tenderFolder}/{subFolder}")
-    //@CrossOrigin(origins = "http://localhost:3000", methods = {RequestMethod.POST, RequestMethod.OPTIONS}, allowedHeaders = "*", allowCredentials = "true")
-    public ResponseEntity<?> uploadFile(
+    public ResponseEntity<FileInfo> uploadFile(
     		@PathVariable String tenderFolder, 
     		@PathVariable String subFolder, 
     		@RequestParam("file") MultipartFile file) {
         if (file.isEmpty()) {
-            return ResponseEntity.badRequest().body("File is empty");
+        	return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
         String originalFilename = file.getOriginalFilename();
@@ -51,14 +51,14 @@ public class S3FileUploadController {
                     .build(),
                     RequestBody.fromBytes(file.getBytes()));
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("Failed to upload file to S3: " + e.getMessage());
+        	return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
         // Construct the CloudFront URL for the file
         String fileUrl = cloudFrontDomainName + "/" + uniqueFileName;
 
         FileInfo fileInfo = new FileInfo(fileUrl, originalFilename, file.getSize(), 0, fileType, extension);
-        return ResponseEntity.ok(fileInfo);
+        return new ResponseEntity<>(fileInfo, HttpStatus.CREATED);
     }
 
     private String determineFileType(String extension) {
