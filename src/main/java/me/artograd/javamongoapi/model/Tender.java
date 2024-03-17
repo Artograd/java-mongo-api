@@ -24,6 +24,8 @@ public class Tender {
     private List<String> category;
 	@Schema(description = "The location info of the tender")
     private Location location;
+	@Schema(description = "The ID of the leaf object in the location nested hierarcy.")
+	private String locationLeafId;
 	@Schema(description = "The user email of the official who created the tender")
     private String ownerEmail;
 	@Schema(description = "Wheather email should be sent in the object as response")
@@ -160,5 +162,11 @@ public class Tender {
 	}
 	public void setSnapFiles(List<String> snapFiles) {
 		this.snapFiles = snapFiles;
+	}
+	public String getLocationLeafId() {
+		return locationLeafId;
+	}
+	public void setLocationLeafId(String locationLeafId) {
+		this.locationLeafId = locationLeafId;
 	}
 }

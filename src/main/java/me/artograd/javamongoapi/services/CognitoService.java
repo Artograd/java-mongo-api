@@ -7,14 +7,27 @@ import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUse
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminUpdateUserAttributesRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
 
+import java.security.interfaces.RSAPrivateKey;
+import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.auth0.jwk.JwkProvider;
+import com.auth0.jwk.JwkProviderBuilder;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import com.auth0.jwt.interfaces.DecodedJWT;
+import com.auth0.jwt.interfaces.RSAKeyProvider;
+
+import jakarta.servlet.http.HttpServletRequest;
 import me.artograd.javamongoapi.model.User;
 import me.artograd.javamongoapi.model.UserAttribute;
+import me.artograd.javamongoapi.model.system.UserTokenClaims;
+import me.artograd.javamongoapi.utils.CommonUtils;
 
 @Service
 public class CognitoService {
@@ -79,5 +92,62 @@ public class CognitoService {
             return null;
         }
     }
+    
+    public UserTokenClaims getUserTokenClaims(HttpServletRequest request) {
+            String region = userPoolId.substring(0, userPoolId.indexOf("_"));
+            String cognitoIssuer = String.format("https://cognito-idp.%s.amazonaws.com/%s", region, userPoolId);
 
+            JwkProvider provider = new JwkProviderBuilder(cognitoIssuer).build();
+            
+            RSAKeyProvider keyProvider = new RSAKeyProvider() {
+                @Override
+                public RSAPublicKey getPublicKeyById(String kid) {
+                    // Received 'kid' value might be null if it wasn't defined in the Token's header
+                    try {
+                        return (RSAPublicKey) provider.get(kid).getPublicKey();
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return null;
+                    }
+                }
+
+                @Override
+                public RSAPrivateKey getPrivateKey() {
+                    return null; // Private key is not needed for token verification
+                }
+
+                @Override
+                public String getPrivateKeyId() {
+                    return null; // Private key ID is not needed for token verification
+                }
+            };
+
+            Algorithm algorithm = Algorithm.RSA256(keyProvider);
+            JWTVerifier verifier = JWT.require(algorithm)
+                                       .withIssuer(cognitoIssuer)
+                                       .build();
+
+            DecodedJWT jwt = verifier.verify( CommonUtils.parseToken(request) );
+            String[] roles = jwt.getClaim("cognito:groups").asArray(String.class);
+            
+            UserTokenClaims tokenClaims = new UserTokenClaims();
+            tokenClaims.setUsername( jwt.getClaim("cognito:username").asString() );
+            tokenClaims.setArtist(hasRole(roles, "Artists"));
+            tokenClaims.setOfficer(hasRole(roles, "Officials"));
+            
+            return tokenClaims;
+    }
+    
+    private boolean hasRole(String[] roles, String r) {
+        if (roles == null) {
+            return false;
+        }
+
+        for (String role : roles) {
+            if (role.equals(r)) {
+                return true; 
+            }
+        }
+        return false;
+    }
 }

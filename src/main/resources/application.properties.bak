@@ -1,3 +1,7 @@
 spring.data.mongodb.uri=${ARTOGRAD_MONGO_DB_CONNECTTION}
+spring.servlet.multipart.max-file-size=1MB
+spring.servlet.multipart.max-request-size=1MB
 springdoc.packagesToScan=me.artograd.javamongoapi.model,me.artograd.javamongoapi.controllers
-springdoc.swagger-ui.path=/swagger-ui.html
+aws.s3.bucket-name=artograd-media
+aws.cloudfront.distribution-domain=https://d197uxz9wzvazk.cloudfront.net
+aws.cognito.userPoolId=eu-central-1_xxiTHHeNp

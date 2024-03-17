@@ -50,7 +50,7 @@ public class TenderService {
         tenderRepository.deleteById(id);
     }
 
-    public List<Tender> searchTenders(String title, List<String> locations, List<String> statuses, String ownerId) {
+    public List<Tender> searchTenders(String title, List<String> locationLeafIds, List<String> statuses, String ownerId) {
     	final Query query = new Query();
         final List<Criteria> criteria = new ArrayList<>();
 
@@ -62,8 +62,8 @@ public class TenderService {
         	criteria.add(Criteria.where("ownerId").is(ownerId));
         }
         
-        if (locations != null && !locations.isEmpty()) {
-            criteria.add(Criteria.where("location").in(locations));
+        if (locationLeafIds != null && !locationLeafIds.isEmpty()) {
+            criteria.add(Criteria.where("locationLeafId").in(locationLeafIds));
         }
 
         if (statuses != null && !statuses.isEmpty()) {
