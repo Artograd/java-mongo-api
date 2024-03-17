@@ -126,16 +126,21 @@ public class CognitoService {
             JWTVerifier verifier = JWT.require(algorithm)
                                        .withIssuer(cognitoIssuer)
                                        .build();
-
-            DecodedJWT jwt = verifier.verify( CommonUtils.parseToken(request) );
-            String[] roles = jwt.getClaim("cognito:groups").asArray(String.class);
             
-            UserTokenClaims tokenClaims = new UserTokenClaims();
-            tokenClaims.setUsername( jwt.getClaim("cognito:username").asString() );
-            tokenClaims.setArtist(hasRole(roles, "Artists"));
-            tokenClaims.setOfficer(hasRole(roles, "Officials"));
-            
-            return tokenClaims;
+            String token = CommonUtils.parseToken(request);
+            if (token != null) {
+            	DecodedJWT jwt = verifier.verify( CommonUtils.parseToken(request) );
+                String[] roles = jwt.getClaim("cognito:groups").asArray(String.class);
+                
+                UserTokenClaims tokenClaims = new UserTokenClaims();
+                tokenClaims.setUsername( jwt.getClaim("cognito:username").asString() );
+                tokenClaims.setArtist(hasRole(roles, "Artists"));
+                tokenClaims.setOfficer(hasRole(roles, "Officials"));
+                
+                return tokenClaims;
+            } else {
+            	return new UserTokenClaims();
+            }
     }
     
     private boolean hasRole(String[] roles, String r) {

@@ -30,12 +30,12 @@ public class TenderController {
     public ResponseEntity<Tender> createTender(@RequestBody Tender tender, HttpServletRequest request) {
     	
     	UserTokenClaims claims = cognitoService.getUserTokenClaims(request);
-    	if ( claims.getUsername().equals( tender.getOwnerId() ) && claims.isOfficer() ) {
-    		Tender createdTender = tenderService.createTender(tender);
-            return new ResponseEntity<>(createdTender, HttpStatus.CREATED);
-    	} else {
+    	if ( claims.getUsername() == null || !claims.getUsername().equals( tender.getOwnerId() ) || !claims.isOfficer() ) {
     		return new ResponseEntity<>(HttpStatus.FORBIDDEN);
-    	}        
+    	}
+    	
+    	Tender createdTender = tenderService.createTender(tender);
+        return new ResponseEntity<>(createdTender, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
