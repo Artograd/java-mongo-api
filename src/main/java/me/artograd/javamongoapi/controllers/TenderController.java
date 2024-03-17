@@ -52,11 +52,11 @@ public class TenderController {
             @RequestParam(required = false) String title,
             @RequestParam(required = false) List<String> locations,
             @RequestParam(required = false) List<String> statuses,
-            @RequestParam(required = false) String owner) {
+            @RequestParam(required = false) String ownerId) {
         List<Tender> tenders = tenderService.searchTenders(title, 
         		locations != null ? locations : new ArrayList<>(), 
         		statuses  != null ? statuses  : new ArrayList<>(),
-        owner);
+        				ownerId);
         return new ResponseEntity<>(tenders, HttpStatus.OK);
     }
 }

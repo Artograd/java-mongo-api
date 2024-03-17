@@ -30,6 +30,8 @@ public class Tender {
     private boolean showEmail;
 	@Schema(description = "links to files of the supported documents")
     private List<String> files;
+	@Schema(description = "links to small files of the supported documents a")
+    private List<String> snapFiles;
 	@Schema(description = "Status of the tender")
     private String status;
 	@Schema(description = "The user name of the official who created the tender")
@@ -152,5 +154,11 @@ public class Tender {
 	}
 	public void setOwnerPicture(String ownerPicture) {
 		this.ownerPicture = ownerPicture;
+	}
+	public List<String> getSnapFiles() {
+		return snapFiles;
+	}
+	public void setSnapFiles(List<String> snapFiles) {
+		this.snapFiles = snapFiles;
 	}
 }

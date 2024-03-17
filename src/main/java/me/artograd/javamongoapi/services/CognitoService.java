@@ -1,10 +1,11 @@
 package me.artograd.javamongoapi.services;
 
 import software.amazon.awssdk.services.cognitoidentityprovider.CognitoIdentityProviderClient;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminDeleteUserRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUserRequest;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminGetUserResponse;
+import software.amazon.awssdk.services.cognitoidentityprovider.model.AdminUpdateUserAttributesRequest;
 import software.amazon.awssdk.services.cognitoidentityprovider.model.AttributeType;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.ListUsersRequest;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.ListUsersResponse;
-import software.amazon.awssdk.services.cognitoidentityprovider.model.UserType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,30 +21,63 @@ public class CognitoService {
 	
 	@Value("${aws.cognito.userPoolId}")
     private String userPoolId;
-    
-	public User getUserBySub(String sub) {
-        try (CognitoIdentityProviderClient cognitoClient = CognitoIdentityProviderClient.builder()
-                .build()) {
-
-            ListUsersRequest listUsersRequest = ListUsersRequest.builder()
+   
+	public boolean deleteUserByUsername(String userName) {
+        try (CognitoIdentityProviderClient cognitoClient = CognitoIdentityProviderClient.builder().build()) {
+            AdminDeleteUserRequest deleteRequest = AdminDeleteUserRequest.builder()
                     .userPoolId(userPoolId)
-                    .filter(String.format("sub = \"%s\"", sub))
+                    .username(userName) 
                     .build();
             
-            ListUsersResponse listUsersResponse = cognitoClient.listUsers(listUsersRequest);
-            List<UserAttribute> userAttrsResult = new ArrayList<UserAttribute>();
-            for (UserType user : listUsersResponse.users()) {
-                
-            	List<AttributeType> list = user.attributes();
-            	for (AttributeType attr : list) {
-            		userAttrsResult.add(new UserAttribute(attr.name(), attr.value()));
-				}
-            	
-            	return new User(userAttrsResult);
-            }
+            cognitoClient.adminDeleteUser(deleteRequest);
+            return true; 
         } catch (Exception e) {
-            System.err.println("Error fetching user by sub: " + e.getMessage());
+            System.err.println("Error deleting user by sub: " + e.getMessage());
+            return false;
         }
-        return null;
     }
+
+    public boolean updateUserAttributes(String userName, List<UserAttribute> attributes) {
+        try (CognitoIdentityProviderClient cognitoClient = CognitoIdentityProviderClient.builder().build()) {
+            List<AttributeType> attributeTypes = new ArrayList<>();
+            for (UserAttribute userAttribute : attributes) {
+                attributeTypes.add(AttributeType.builder()
+                        .name(userAttribute.getName())
+                        .value(userAttribute.getValue())
+                        .build());
+            }
+            
+            AdminUpdateUserAttributesRequest updateRequest = AdminUpdateUserAttributesRequest.builder()
+                    .userPoolId(userPoolId)
+                    .username(userName) 
+                    .userAttributes(attributeTypes)
+                    .build();
+            
+            cognitoClient.adminUpdateUserAttributes(updateRequest);
+            return true;
+        } catch (Exception e) {
+            System.err.println("Error updating user attributes by username: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    public User getUserByUsername(String username) {
+        try (CognitoIdentityProviderClient cognitoClient = CognitoIdentityProviderClient.builder().build()) {
+            AdminGetUserRequest getUserRequest = AdminGetUserRequest.builder()
+                    .userPoolId(userPoolId)
+                    .username(username)
+                    .build();
+            
+            AdminGetUserResponse getUserResponse = cognitoClient.adminGetUser(getUserRequest);
+            List<UserAttribute> userAttrsResult = new ArrayList<>();
+            for (AttributeType attr : getUserResponse.userAttributes()) {
+                userAttrsResult.add(new UserAttribute(attr.name(), attr.value()));
+            }
+            return new User(userAttrsResult);
+        } catch (Exception e) {
+            System.err.println("Error fetching user by username: " + e.getMessage());
+            return null;
+        }
+    }
+
 }

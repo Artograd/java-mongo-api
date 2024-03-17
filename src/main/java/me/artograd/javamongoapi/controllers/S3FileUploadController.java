@@ -1,6 +1,9 @@
 package me.artograd.javamongoapi.controllers;
 
+import java.awt.image.BufferedImage;
 import java.util.UUID;
+
+import javax.imageio.ImageIO;
 
 import org.apache.commons.io.FilenameUtils;
 import org.springframework.beans.factory.annotation.Value;
@@ -12,10 +15,14 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import net.coobird.thumbnailator.Thumbnails;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 @RestController
 public class S3FileUploadController {
@@ -41,7 +48,8 @@ public class S3FileUploadController {
 
         String originalFilename = file.getOriginalFilename();
         String extension = FilenameUtils.getExtension(originalFilename).toLowerCase();
-        String uniqueFileName = tenderFolder + "/" + subFolder + "/" + UUID.randomUUID().toString() + "." + extension;
+        String fileName = UUID.randomUUID().toString();
+        String uniqueFileName = tenderFolder + "/" + subFolder + "/" + fileName + "." + extension;
         String fileType = determineFileType(extension);
 
         try {
@@ -56,8 +64,37 @@ public class S3FileUploadController {
 
         // Construct the CloudFront URL for the file
         String fileUrl = cloudFrontDomainName + "/" + uniqueFileName;
+        
+        String snapPath = null;
+        if (determineFileType(extension).equals("image")) {
+            // Define the path for the resized image (snap)
+        	String snapFileName  = tenderFolder + "/" + subFolder  + "/snaps/" + fileName + "." + extension;
+			try {
+				BufferedImage thumbnail = Thumbnails.of(file.getInputStream())
+				         .size(286, 336) 
+				         .asBufferedImage();
+			
+				ByteArrayOutputStream baos = new ByteArrayOutputStream();
+				ImageIO.write(thumbnail, extension, baos);
+			
+	            byte[] snapBytes = baos.toByteArray();
+	
+	            s3Client.putObject(PutObjectRequest.builder()
+	                    .bucket(bucketName)
+	                    .key(snapFileName)
+	                    .build(),
+	                    RequestBody.fromBytes(snapBytes));
+	
+	            snapPath = cloudFrontDomainName + "/" + snapFileName;
+            
+			} catch (IOException e) {
+				return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+			}
+        } else {
+        	snapPath = fileUrl;
+        }
 
-        FileInfo fileInfo = new FileInfo(fileUrl, originalFilename, file.getSize(), 0, fileType, extension);
+        FileInfo fileInfo = new FileInfo(fileUrl, snapPath, originalFilename, file.getSize(), 0, fileType, extension);
         return new ResponseEntity<>(fileInfo, HttpStatus.CREATED);
     }
 
@@ -73,14 +110,16 @@ public class S3FileUploadController {
     // Inner class to encapsulate file info response
     static class FileInfo {
         public String path;
+        public String snapPath;
         public String name;
         public long size;
         public int id;
         public String type;
         public String extension;
 
-        public FileInfo(String path, String name, long size, int id, String type, String extension) {
+        public FileInfo(String path, String snapPath, String name, long size, int id, String type, String extension) {
             this.path = path;
+            this.snapPath = snapPath;
             this.name = name;
             this.size = size;
             this.id = id;

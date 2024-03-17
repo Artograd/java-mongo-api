@@ -50,7 +50,7 @@ public class TenderService {
         tenderRepository.deleteById(id);
     }
 
-    public List<Tender> searchTenders(String title, List<String> locations, List<String> statuses, String owner) {
+    public List<Tender> searchTenders(String title, List<String> locations, List<String> statuses, String ownerId) {
     	final Query query = new Query();
         final List<Criteria> criteria = new ArrayList<>();
 
@@ -58,8 +58,8 @@ public class TenderService {
         	criteria.add(Criteria.where("title").regex(title, "i"));
         }
         
-        if ( owner != null && !owner.isBlank() ) {
-        	criteria.add(Criteria.where("owner").is(owner));
+        if ( ownerId != null && !ownerId.isBlank() ) {
+        	criteria.add(Criteria.where("ownerId").is(ownerId));
         }
         
         if (locations != null && !locations.isEmpty()) {
@@ -78,9 +78,9 @@ public class TenderService {
     }
     
     private Tender setOwnerData(Tender tender) {
-    	String sub = tender.getOwnerId();
-    	if (StringUtils.isNotBlank(sub)) {
-    		User user = cognitoService.getUserBySub(sub);
+    	String username = tender.getOwnerId();
+    	if (StringUtils.isNotBlank(username)) {
+    		User user = cognitoService.getUserByUsername(username);
     		if (user != null ) {
     			List<UserAttribute> attributes = user.getAttributes();
     			if ( attributes != null ) {
