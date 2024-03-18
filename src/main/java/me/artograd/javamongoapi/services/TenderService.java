@@ -13,9 +13,13 @@ import me.artograd.javamongoapi.model.User;
 import me.artograd.javamongoapi.model.UserAttribute;
 import me.artograd.javamongoapi.repositories.TenderRepository;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
+
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 
 @Service
 public class TenderService {
@@ -50,7 +54,10 @@ public class TenderService {
         tenderRepository.deleteById(id);
     }
 
-    public List<Tender> searchTenders(String title, List<String> locationLeafIds, List<String> statuses, String ownerId) {
+    public List<Tender> searchTenders(
+    		String title, List<String> locationLeafIds, List<String> statuses, 
+    		String ownerId, int page, int size, String sortBy, String sortOrder) {
+    	
     	final Query query = new Query();
         final List<Criteria> criteria = new ArrayList<>();
 
@@ -73,8 +80,24 @@ public class TenderService {
         if (!criteria.isEmpty()) {
             query.addCriteria(new Criteria().andOperator(criteria.toArray(new Criteria[0])));
         }
+        
+        Sort.Direction sortDirection = "asc".equalsIgnoreCase(sortOrder) ? Sort.Direction.ASC : Sort.Direction.DESC;
+        
+        final Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        query.with(pageable);
 
         return mongoTemplate.find(query, Tender.class);
+    }
+    
+    public long getCountByOwnerIdAndStatusIn(String ownerId, List<String> statuses) {
+            Query query = new Query();
+            query.addCriteria(Criteria.where("ownerId").is(ownerId));
+            
+            if (statuses != null && !statuses.isEmpty()) {
+                query.addCriteria(Criteria.where("status").in(statuses));
+            }
+
+            return mongoTemplate.count(query, Tender.class);
     }
     
     private Tender setOwnerData(Tender tender) {

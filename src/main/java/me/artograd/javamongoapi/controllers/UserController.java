@@ -1,6 +1,5 @@
 package me.artograd.javamongoapi.controllers;
 
-import me.artograd.javamongoapi.model.Tender;
 import me.artograd.javamongoapi.model.User;
 import me.artograd.javamongoapi.model.UserAttribute;
 import me.artograd.javamongoapi.model.system.UserTokenClaims;

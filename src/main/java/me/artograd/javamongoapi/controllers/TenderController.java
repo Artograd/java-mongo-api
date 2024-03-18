@@ -12,7 +12,6 @@ import me.artograd.javamongoapi.model.system.UserTokenClaims;
 import me.artograd.javamongoapi.services.CognitoService;
 import me.artograd.javamongoapi.services.TenderService;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -77,12 +76,23 @@ public class TenderController {
             @RequestParam(required = false) String title,
             @RequestParam(required = false) List<String> locationLeafIds,
             @RequestParam(required = false) List<String> statuses,
-            @RequestParam(required = false) String ownerId) {
-        List<Tender> tenders = tenderService.searchTenders(title, 
-        		locationLeafIds != null ? locationLeafIds : new ArrayList<>(), 
-        		statuses  != null ? statuses  : new ArrayList<>(),
-        				ownerId);
+            @RequestParam(required = false) String ownerId,
+            @RequestParam(defaultValue = "0") int page, 
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy, 
+            @RequestParam(defaultValue = "desc") String sortOrder) {
+    	
+    	List<Tender> tenders = tenderService.searchTenders(title, locationLeafIds, statuses, ownerId, 
+    			page, size, sortBy, sortOrder);
         return new ResponseEntity<>(tenders, HttpStatus.OK);
+    }
+    
+    @GetMapping("/count/{ownerId}")
+    public ResponseEntity<Long> getTenderCountByOwnerIdAndStatuses(
+            @PathVariable String ownerId,
+            @RequestParam(required = false) List<String> statuses) {
+        long count = tenderService.getCountByOwnerIdAndStatusIn(ownerId, statuses);
+        return ResponseEntity.ok(count);
     }
     
     /**
