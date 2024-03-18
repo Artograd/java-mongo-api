@@ -6,6 +6,8 @@ import java.util.UUID;
 import javax.imageio.ImageIO;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +17,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.servlet.http.HttpServletRequest;
+import me.artograd.javamongoapi.model.system.UserTokenClaims;
+import me.artograd.javamongoapi.services.CognitoService;
 import net.coobird.thumbnailator.Thumbnails;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
@@ -33,18 +39,27 @@ public class S3FileUploadController {
 	@Value("${aws.cloudfront.distribution-domain}")
     private String cloudFrontDomainName;
 	
+	@Autowired
+    private CognitoService cognitoService;
+	
 	private final S3Client s3Client = S3Client.builder()
             .credentialsProvider(DefaultCredentialsProvider.create())
             .build();
 	
     @PostMapping("/uploadFile/{tenderFolder}/{subFolder}")
+    @SecurityRequirement(name = "bearerAuth")
     public ResponseEntity<FileInfo> uploadFile(
     		@PathVariable String tenderFolder, 
     		@PathVariable String subFolder, 
-    		@RequestParam("file") MultipartFile file) {
+    		@RequestParam("file") MultipartFile file, HttpServletRequest request) {
         if (file.isEmpty()) {
         	return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
+        
+        UserTokenClaims claims = cognitoService.getUserTokenClaims(request);
+    	if ( StringUtils.isBlank( claims.getUsername() )) {//operation is allowed only to authorized users
+    		return new ResponseEntity<>(HttpStatus.FORBIDDEN);
+    	}
 
         String originalFilename = file.getOriginalFilename();
         String extension = FilenameUtils.getExtension(originalFilename).toLowerCase();

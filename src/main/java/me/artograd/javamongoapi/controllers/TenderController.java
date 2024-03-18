@@ -30,6 +30,8 @@ public class TenderController {
     public ResponseEntity<Tender> createTender(@RequestBody Tender tender, HttpServletRequest request) {
     	
     	UserTokenClaims claims = cognitoService.getUserTokenClaims(request);
+    	
+    	//operation is allowed only for officer's token
     	if ( claims.getUsername() == null || !claims.getUsername().equals( tender.getOwnerId() ) || !claims.isOfficer() ) {
     		return new ResponseEntity<>(HttpStatus.FORBIDDEN);
     	}
@@ -48,7 +50,11 @@ public class TenderController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Tender> updateTender(@PathVariable String id, @RequestBody Tender tender) {
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<Tender> updateTender(@PathVariable String id, @RequestBody Tender tender, HttpServletRequest request) {
+    	
+    	if ( isDenied(id, request) ) { return new ResponseEntity<>(HttpStatus.FORBIDDEN);}
+    	
         Tender updatedTender = tenderService.updateTender(tender);
         if (updatedTender != null) {
             return new ResponseEntity<>(updatedTender, HttpStatus.OK);
@@ -57,7 +63,11 @@ public class TenderController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteTender(@PathVariable String id) {
+    @SecurityRequirement(name = "bearerAuth")
+    public ResponseEntity<Void> deleteTender(@PathVariable String id, HttpServletRequest request) {
+    	
+    	if ( isDenied(id, request) ) { return new ResponseEntity<>(HttpStatus.FORBIDDEN);}
+    	
         tenderService.deleteTender(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
@@ -73,6 +83,24 @@ public class TenderController {
         		statuses  != null ? statuses  : new ArrayList<>(),
         				ownerId);
         return new ResponseEntity<>(tenders, HttpStatus.OK);
+    }
+    
+    /**
+     * Check that operation is executed by tender's owner and owner is still official
+     * @param tenderId
+     * @param request
+     * @return
+     */
+    private boolean isDenied(String tenderId, HttpServletRequest request) {
+    	Tender existingTender = tenderService.getTender(tenderId);
+    	UserTokenClaims claims = cognitoService.getUserTokenClaims(request);
+    	if ( claims.getUsername() == null || //user name is not provided in token
+    		!claims.getUsername().equals( existingTender.getOwnerId() ) || //request is made on behalf of different user
+    		!claims.isOfficer() //user is no more an officer
+    			) {
+    		return true;
+    	}
+    	return false;
     }
     
 }
